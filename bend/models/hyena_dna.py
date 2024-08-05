@@ -941,7 +941,7 @@ This is heavily inspired from CanineTokenizer in transformers package.
 
 
 class CharacterTokenizer(PreTrainedTokenizer):
-    def __init__(self, characters: Sequence[str], model_max_length: int, padding_side: str='left', **kwargs):
+    def __init__(self, characters: Sequence[str], model_max_length: int, padding_side: str='left', **kwargs):        
         """Character tokenizer for Hugging Face transformers.
         Args:
             characters (Sequence[str]): List of desired characters. Any character which
@@ -957,21 +957,35 @@ class CharacterTokenizer(PreTrainedTokenizer):
                     "[UNK]": 6
                 an id (starting at 7) will be assigned to each character.
             model_max_length (int): Model maximum sequence length.
-        """
+        """        
         self.characters = characters
         self.model_max_length = model_max_length
+        
+        # Initialize the vocabulary
+        self._vocab_str_to_int = {
+            "[CLS]": 0,
+            "[SEP]": 1,
+            "[BOS]": 2,
+            "[MASK]": 3,
+            "[PAD]": 4,
+            "[RESERVED]": 5,
+            "[UNK]": 6,
+            **{ch: i + 7 for i, ch in enumerate(characters)},
+        }
+        self._vocab_int_to_str = {v: k for k, v in self._vocab_str_to_int.items()}
+        
+        # Special tokens
         bos_token = AddedToken("[BOS]", lstrip=False, rstrip=False)
         eos_token = AddedToken("[SEP]", lstrip=False, rstrip=False)
         sep_token = AddedToken("[SEP]", lstrip=False, rstrip=False)
         cls_token = AddedToken("[CLS]", lstrip=False, rstrip=False)
         pad_token = AddedToken("[PAD]", lstrip=False, rstrip=False)
         unk_token = AddedToken("[UNK]", lstrip=False, rstrip=False)
-
         mask_token = AddedToken("[MASK]", lstrip=True, rstrip=False)
 
         super().__init__(
             bos_token=bos_token,
-            eos_token=sep_token,
+            eos_token=eos_token,
             sep_token=sep_token,
             cls_token=cls_token,
             pad_token=pad_token,
@@ -994,7 +1008,10 @@ class CharacterTokenizer(PreTrainedTokenizer):
             **{ch: i + 7 for i, ch in enumerate(characters)},
         }
         self._vocab_int_to_str = {v: k for k, v in self._vocab_str_to_int.items()}
-
+        
+    def get_vocab(self):
+        return self._vocab_str_to_int
+    
     @property
     def vocab_size(self) -> int:
         return len(self._vocab_str_to_int)
